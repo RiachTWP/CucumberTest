@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java
+    implementation 'org.seleniumhq.selenium:selenium-java:4.14.1'
+    // https://mvnrepository.com/artifact/io.github.bonigarcia/webdrivermanager
+    implementation 'io.github.bonigarcia:webdrivermanager:5.5.3'
+
+    // https://mvnrepository.com/artifact/io.cucumber/cucumber-java
+    implementation group: 'io.cucumber', name: 'cucumber-java', version: '7.14.0'
+    // https://mvnrepository.com/artifact/io.cucumber/cucumber-junit
+    testImplementation group: 'io.cucumber', name: 'cucumber-junit', version: '7.14.0'
+
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+
+    testImplementation 'org.junit.vintage:junit-vintage-engine:5.7.2'
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+configurations {
+    cucumberRuntime{
+        extendsFrom testImplementation
+    }
+}
+
+def tags = (findProperty('tags') == null) ? 'not @exclude' : findProperty('tags') + ' and not @exclude'
+
+task cucumber() {
+    description("Running Cucumber Test")
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'html:reports/index.html',
+                    '--plugin', 'pretty',
+                    '--glue', 'stepDef',
+                    '--tags', "${tags}",
+                    'src/test/resources'
+            ]
+        }
+    }
+}
